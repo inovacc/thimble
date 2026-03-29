@@ -3,10 +3,7 @@
 $ErrorActionPreference = 'Stop'
 
 $Repo = "inovacc/thimble"
-$Binary = "thimble"
-
-# Default install directory.
-$InstallDir = if ($env:THIMBLE_INSTALL_DIR) { $env:THIMBLE_INSTALL_DIR } else { "$env:LOCALAPPDATA\Thimble\bin" }
+$PluginDir = if ($env:THIMBLE_PLUGIN_DIR) { $env:THIMBLE_PLUGIN_DIR } else { "$env:LOCALAPPDATA\Thimble\plugin" }
 
 # Detect architecture.
 $Arch = if ([Environment]::Is64BitOperatingSystem) {
@@ -26,11 +23,10 @@ if (-not $Tag) {
 }
 Write-Host "Latest release: $Tag"
 
-# Build download URL.
-$Asset = "${Binary}_Windows_${Arch}.zip"
+# Download plugin archive (binary + .claude-plugin/ + skills/ + hooks/ + agents/ + .mcp.json).
+$Asset = "thimble-plugin_Windows_${Arch}.zip"
 $Url = "https://github.com/$Repo/releases/download/$Tag/$Asset"
 
-# Download and extract.
 $TmpDir = Join-Path $env:TEMP "thimble-install-$(Get-Random)"
 New-Item -ItemType Directory -Path $TmpDir -Force | Out-Null
 
@@ -38,40 +34,28 @@ try {
     Write-Host "Downloading $Url..."
     Invoke-WebRequest -Uri $Url -OutFile (Join-Path $TmpDir $Asset)
 
-    Write-Host "Extracting..."
-    Expand-Archive -Path (Join-Path $TmpDir $Asset) -DestinationPath $TmpDir -Force
+    Write-Host "Extracting to $PluginDir..."
+    New-Item -ItemType Directory -Path $PluginDir -Force | Out-Null
+    & "$env:SystemRoot\System32\tar.exe" -xf (Join-Path $TmpDir $Asset) -C $PluginDir 2>$null
 
-    # Install binary.
-    New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
-    Copy-Item -Path (Join-Path $TmpDir "$Binary.exe") -Destination (Join-Path $InstallDir "$Binary.exe") -Force
-
-    # Add to PATH if not already present.
+    # Add plugin dir to PATH for CLI access.
     $UserPath = [Environment]::GetEnvironmentVariable('PATH', 'User')
-    if ($UserPath -notlike "*$InstallDir*") {
-        [Environment]::SetEnvironmentVariable('PATH', "$UserPath;$InstallDir", 'User')
-        $env:PATH = "$env:PATH;$InstallDir"
-        Write-Host "Added $InstallDir to user PATH."
+    if ($UserPath -notlike "*$PluginDir*") {
+        [Environment]::SetEnvironmentVariable('PATH', "$UserPath;$PluginDir", 'User')
+        $env:PATH = "$env:PATH;$PluginDir"
+        Write-Host "Added $PluginDir to user PATH."
     }
 
     Write-Host ""
-    Write-Host "Installed $Binary $Tag to $InstallDir\$Binary.exe"
+    Write-Host "Installed thimble $Tag to $PluginDir"
     Write-Host ""
-
-    # Configure npm for GitHub Packages if npm is available.
-    if (Get-Command npm -ErrorAction SilentlyContinue) {
-        $Npmrc = Join-Path $env:USERPROFILE ".npmrc"
-        $NpmrcContent = if (Test-Path $Npmrc) { Get-Content $Npmrc -Raw } else { "" }
-        if ($NpmrcContent -notlike "*@inovacc:registry*") {
-            Add-Content $Npmrc "@inovacc:registry=https://npm.pkg.github.com"
-            Write-Host "Configured npm for @inovacc GitHub Packages."
-        }
-    }
-
-    Write-Host "Next steps:"
-    Write-Host "  claude plugin install thimble@npm:@inovacc/thimble   # Register as Claude Code plugin"
-    Write-Host "  thimble setup --client claude                        # Or configure hooks manually"
-    Write-Host "  thimble doctor                                       # Run diagnostic checks"
-    Write-Host "  thimble --help                                       # Show all commands"
+    Write-Host "Activate in Claude Code:"
+    Write-Host ""
+    Write-Host "  claude --plugin-dir `"$PluginDir`""
+    Write-Host ""
+    Write-Host "Other commands:"
+    Write-Host "  thimble doctor    # Run diagnostic checks"
+    Write-Host "  thimble --help    # Show all commands"
 }
 finally {
     Remove-Item -Path $TmpDir -Recurse -Force -ErrorAction SilentlyContinue

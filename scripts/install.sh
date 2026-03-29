@@ -4,11 +4,11 @@
 set -euo pipefail
 
 REPO="inovacc/thimble"
-BINARY="thimble"
-INSTALL_DIR="${THIMBLE_INSTALL_DIR:-/usr/local/bin}"
+PLUGIN_DIR="${THIMBLE_PLUGIN_DIR:-${HOME}/.thimble/plugin}"
+BIN_DIR="${THIMBLE_BIN_DIR:-/usr/local/bin}"
 
 # Detect OS and architecture.
-OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
+OS="$(uname -s)"
 ARCH="$(uname -m)"
 
 case "$ARCH" in
@@ -18,8 +18,8 @@ case "$ARCH" in
 esac
 
 case "$OS" in
-  linux)  OS="Linux" ;;
-  darwin) OS="Darwin" ;;
+  Linux)  OS="Linux" ;;
+  Darwin) OS="Darwin" ;;
   *) echo "Unsupported OS: $OS" >&2; exit 1 ;;
 esac
 
@@ -32,45 +32,35 @@ if [ -z "$TAG" ]; then
 fi
 echo "Latest release: $TAG"
 
-# Build download URL.
-ASSET="${BINARY}_${OS}_${ARCH}.tar.gz"
+# Download plugin archive (binary + .claude-plugin/ + skills/ + hooks/ + agents/ + .mcp.json).
+ASSET="thimble-plugin_${OS}_${ARCH}.tar.gz"
 URL="https://github.com/${REPO}/releases/download/${TAG}/${ASSET}"
 
-# Download and extract.
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
 
 echo "Downloading ${URL}..."
 curl -fsSL "$URL" -o "${TMPDIR}/${ASSET}"
 
-echo "Extracting..."
-tar xzf "${TMPDIR}/${ASSET}" -C "$TMPDIR"
+echo "Extracting to ${PLUGIN_DIR}..."
+mkdir -p "$PLUGIN_DIR"
+tar xzf "${TMPDIR}/${ASSET}" -C "$PLUGIN_DIR"
 
-# Install binary.
-if [ -w "$INSTALL_DIR" ]; then
-  mv "${TMPDIR}/${BINARY}" "${INSTALL_DIR}/${BINARY}"
+# Symlink binary for CLI access.
+if [ -w "$BIN_DIR" ]; then
+  ln -sf "${PLUGIN_DIR}/thimble" "${BIN_DIR}/thimble"
 else
-  echo "Installing to ${INSTALL_DIR} (requires sudo)..."
-  sudo mv "${TMPDIR}/${BINARY}" "${INSTALL_DIR}/${BINARY}"
+  echo "Linking to ${BIN_DIR} (requires sudo)..."
+  sudo ln -sf "${PLUGIN_DIR}/thimble" "${BIN_DIR}/thimble"
 fi
 
-chmod +x "${INSTALL_DIR}/${BINARY}"
-
 echo ""
-echo "Installed ${BINARY} ${TAG} to ${INSTALL_DIR}/${BINARY}"
+echo "✓ Installed thimble ${TAG} to ${PLUGIN_DIR}"
 echo ""
-
-# Configure npm for GitHub Packages if npm is available.
-if command -v npm &>/dev/null; then
-  NPMRC="${HOME}/.npmrc"
-  if ! grep -q '@inovacc:registry' "$NPMRC" 2>/dev/null; then
-    echo "@inovacc:registry=https://npm.pkg.github.com" >> "$NPMRC"
-    echo "Configured npm for @inovacc GitHub Packages."
-  fi
-fi
-
-echo "Next steps:"
-echo "  claude plugin install thimble@npm:@inovacc/thimble   # Register as Claude Code plugin"
-echo "  thimble setup --client claude                        # Or configure hooks manually"
-echo "  thimble doctor                                       # Run diagnostic checks"
-echo "  thimble --help                                       # Show all commands"
+echo "Activate in Claude Code:"
+echo ""
+echo "  claude --plugin-dir ${PLUGIN_DIR}"
+echo ""
+echo "Other commands:"
+echo "  thimble doctor    # Run diagnostic checks"
+echo "  thimble --help    # Show all commands"

@@ -109,8 +109,8 @@ func runSetup(_ *cobra.Command, _ []string) error {
 	// Deploy plugin if requested.
 	if setupPlugin {
 		if platformID == platform.PlatformClaudeCode {
-			_, _ = fmt.Fprintln(os.Stderr, "NOTE: For Claude Code, prefer the npm plugin install:")
-			_, _ = fmt.Fprintln(os.Stderr, "  npm install -g @inovacc/thimble && claude plugin install thimble@npm:@inovacc/thimble")
+			_, _ = fmt.Fprintln(os.Stderr, "NOTE: For Claude Code, prefer the plugin directory approach:")
+			_, _ = fmt.Fprintln(os.Stderr, "  claude --plugin-dir ~/.thimble/plugin")
 			_, _ = fmt.Fprintln(os.Stderr, "Falling back to legacy deploy for backward compatibility.")
 		}
 

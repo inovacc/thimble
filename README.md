@@ -23,26 +23,6 @@ A single-binary MCP plugin for AI coding assistants. Provides an FTS5 knowledge 
 
 ## Installation
 
-### Claude Code Plugin (recommended)
-
-```bash
-# One-time setup: point npm to GitHub Packages for @inovacc scope
-echo @inovacc:registry=https://npm.pkg.github.com >> ~/.npmrc
-
-# Install and register
-npm install -g @inovacc/thimble
-claude plugin install thimble@npm:@inovacc/thimble
-```
-
-**Windows (PowerShell):**
-```powershell
-Add-Content "$env:USERPROFILE\.npmrc" "@inovacc:registry=https://npm.pkg.github.com"
-npm install -g @inovacc/thimble
-claude plugin install thimble@npm:@inovacc/thimble
-```
-
-### Other Methods
-
 **Linux / macOS:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/inovacc/thimble/main/scripts/install.sh | bash
@@ -53,12 +33,29 @@ curl -fsSL https://raw.githubusercontent.com/inovacc/thimble/main/scripts/instal
 irm https://raw.githubusercontent.com/inovacc/thimble/main/scripts/install.ps1 | iex
 ```
 
+Then activate in Claude Code:
+```bash
+claude --plugin-dir ~/.thimble/plugin            # Linux / macOS
+claude --plugin-dir "$env:LOCALAPPDATA\Thimble\plugin"  # Windows
+```
+
+<details>
+<summary>Other install methods</summary>
+
 **Go install:**
 ```bash
 go install github.com/inovacc/thimble/cmd/thimble@latest
 ```
 
-Or download a pre-built binary from [Releases](https://github.com/inovacc/thimble/releases).
+**npm (GitHub Packages):**
+```bash
+echo @inovacc:registry=https://npm.pkg.github.com >> ~/.npmrc
+npm install -g @inovacc/thimble
+```
+
+**Pre-built binaries:** [Releases](https://github.com/inovacc/thimble/releases)
+
+</details>
 
 **Optional external tools:** `golangci-lint` (for lint tools) and `gh` CLI (for gh tools) must be installed separately if you want to use those features. Both degrade gracefully if not found on PATH.
 
@@ -68,13 +65,9 @@ Or download a pre-built binary from [Releases](https://github.com/inovacc/thimbl
 
 ```bash
 # Plugin mode (Claude Code — recommended)
-claude plugin install thimble@npm:@inovacc/thimble
+claude --plugin-dir ~/.thimble/plugin
 
-# Or legacy setup with auto-detection
-thimble setup
-
-# Or specify explicitly
-thimble setup --client claude
+# Or manual setup for other IDEs
 thimble setup --client gemini
 thimble setup --client cursor
 ```
