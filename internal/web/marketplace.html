@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>thimble - Plugin Marketplace</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1117; color: #e1e4e8; line-height: 1.6; padding: 24px; }
+  h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; color: #f0f6fc; }
+  h1 span { color: #58a6ff; }
+  nav { margin-bottom: 24px; font-size: 0.9rem; }
+  nav a { color: #58a6ff; text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  .search-bar { margin-bottom: 24px; }
+  .search-bar input {
+    width: 100%; max-width: 480px; padding: 10px 16px; font-size: 0.95rem;
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    color: #e1e4e8; outline: none;
+  }
+  .search-bar input:focus { border-color: #58a6ff; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+  .plugin-card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    padding: 20px; display: flex; flex-direction: column; gap: 12px;
+    transition: border-color 0.2s;
+  }
+  .plugin-card:hover { border-color: #58a6ff; }
+  .plugin-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .plugin-name { font-size: 1.1rem; font-weight: 600; color: #f0f6fc; }
+  .plugin-version { font-size: 0.8rem; color: #8b949e; background: #21262d; padding: 2px 8px; border-radius: 12px; }
+  .plugin-desc { font-size: 0.9rem; color: #c9d1d9; flex: 1; }
+  .plugin-meta { font-size: 0.8rem; color: #8b949e; }
+  .plugin-meta .author { margin-right: 12px; }
+  .keywords { display: flex; flex-wrap: wrap; gap: 6px; }
+  .keyword {
+    font-size: 0.75rem; color: #58a6ff; background: rgba(88, 166, 255, 0.1);
+    padding: 2px 8px; border-radius: 12px;
+  }
+  .plugin-actions { display: flex; align-items: center; gap: 8px; }
+  .badge-installed {
+    font-size: 0.75rem; color: #3fb950; background: rgba(63, 185, 80, 0.1);
+    padding: 4px 10px; border-radius: 12px; font-weight: 600;
+  }
+  .btn-install {
+    padding: 6px 16px; font-size: 0.85rem; font-weight: 600;
+    background: #238636; color: #fff; border: none; border-radius: 6px;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .btn-install:hover { background: #2ea043; }
+  .btn-install:disabled { background: #21262d; color: #8b949e; cursor: not-allowed; }
+  .empty { color: #8b949e; font-style: italic; padding: 40px 0; text-align: center; }
+  .loading { color: #8b949e; font-style: italic; }
+  .status { font-size: 0.75rem; color: #8b949e; text-align: right; margin-top: 16px; }
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; padding: 12px 20px;
+    border-radius: 8px; font-size: 0.9rem; font-weight: 500;
+    opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 100;
+  }
+  .toast.success { background: #238636; color: #fff; }
+  .toast.error { background: #da3633; color: #fff; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<h1><span>thimble</span> Plugin Marketplace</h1>
+<nav><a href="/">Dashboard</a></nav>
+
+<div class="search-bar">
+  <input type="text" id="search" placeholder="Search plugins by name, description, or keyword..." autocomplete="off">
+</div>
+
+<div class="grid" id="grid">
+  <p class="loading">Loading marketplace...</p>
+</div>
+
+<div class="status" id="status">Last updated: --</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  let allPlugins = [];
+  let installedSet = new Set();
+
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type + ' show';
+    setTimeout(() => { t.className = 'toast'; }, 3000);
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function renderGrid(plugins) {
+    const grid = document.getElementById('grid');
+    if (plugins.length === 0) {
+      grid.innerHTML = '<p class="empty">No plugins found.</p>';
+      return;
+    }
+    grid.innerHTML = plugins.map(p => {
+      const installed = installedSet.has(p.name);
+      const keywords = (p.keywords || []).map(k => '<span class="keyword">' + escapeHtml(k) + '</span>').join('');
+      return '<div class="plugin-card">' +
+        '<div class="plugin-header">' +
+          '<span class="plugin-name">' + escapeHtml(p.name) + '</span>' +
+          (p.version ? '<span class="plugin-version">v' + escapeHtml(p.version) + '</span>' : '') +
+        '</div>' +
+        '<div class="plugin-desc">' + escapeHtml(p.description || 'No description') + '</div>' +
+        (keywords ? '<div class="keywords">' + keywords + '</div>' : '') +
+        '<div class="plugin-meta">' +
+          (p.author ? '<span class="author">by ' + escapeHtml(p.author) + '</span>' : '') +
+        '</div>' +
+        '<div class="plugin-actions">' +
+          (installed
+            ? '<span class="badge-installed">Installed</span>'
+            : '<button class="btn-install" data-name="' + escapeHtml(p.name) + '">Install</button>') +
+        '</div>' +
+      '</div>';
+    }).join('');
+
+    // Attach click handlers.
+    grid.querySelectorAll('.btn-install').forEach(btn => {
+      btn.addEventListener('click', () => installPlugin(btn));
+    });
+  }
+
+  async function installPlugin(btn) {
+    const name = btn.dataset.name;
+    btn.disabled = true;
+    btn.textContent = 'Installing...';
+    try {
+      const resp = await fetch('/api/plugins/install', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name })
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        showToast('Failed: ' + (data.error || 'unknown error'), 'error');
+        btn.disabled = false;
+        btn.textContent = 'Install';
+        return;
+      }
+      installedSet.add(name);
+      showToast('Installed ' + name + ' successfully!', 'success');
+      renderGrid(filterPlugins());
+    } catch (e) {
+      showToast('Install failed: ' + e.message, 'error');
+      btn.disabled = false;
+      btn.textContent = 'Install';
+    }
+  }
+
+  function filterPlugins() {
+    const q = document.getElementById('search').value.toLowerCase().trim();
+    if (!q) return allPlugins;
+    return allPlugins.filter(p => {
+      return (p.name || '').toLowerCase().includes(q) ||
+             (p.description || '').toLowerCase().includes(q) ||
+             (p.author || '').toLowerCase().includes(q) ||
+             (p.keywords || []).some(k => k.toLowerCase().includes(q));
+    });
+  }
+
+  document.getElementById('search').addEventListener('input', () => {
+    renderGrid(filterPlugins());
+  });
+
+  async function load() {
+    try {
+      const [marketRes, installedRes] = await Promise.all([
+        fetch('/api/marketplace'),
+        fetch('/api/plugins/installed')
+      ]);
+      if (marketRes.ok) {
+        const data = await marketRes.json();
+        allPlugins = data.plugins || [];
+      }
+      if (installedRes.ok) {
+        const data = await installedRes.json();
+        (data.plugins || []).forEach(p => installedSet.add(p.name));
+      }
+      renderGrid(filterPlugins());
+      document.getElementById('status').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+    } catch (e) {
+      document.getElementById('grid').innerHTML = '<p class="empty">Failed to load marketplace: ' + e.message + '</p>';
+    }
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>

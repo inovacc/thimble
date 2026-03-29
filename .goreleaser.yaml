@@ -1,0 +1,91 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd/thimble
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.Version={{.Version}}
+      - -X main.GitHash={{.Commit}}
+      - -X main.BuildTime={{.Date}}
+      - -X main.BuildHash={{.ShortCommit}}
+      - -X main.GoVersion={{.Env.GOVERSION}}
+      - -X main.GOOS={{.Os}}
+      - -X main.GOARCH={{.Arch}}
+    binary: thimble
+
+archives:
+  - id: binary
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{.Arch}}{{ end }}
+      {{- if .Arm }}v{{.Arm}}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+
+  - id: plugin
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}-plugin_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{.Arch}}{{ end }}
+      {{- if .Arm }}v{{.Arm}}{{ end }}
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - src: .claude-plugin/*
+        dst: .claude-plugin
+      - src: assets/plugin/.mcp.json
+        dst: .
+      - src: hooks/*
+        dst: hooks
+      - src: skills/**/*.md
+        dst: skills
+      - src: agents/*.md
+        dst: agents
+      - src: LICENSE
+      - src: scripts/plugin-check.sh
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  footer: >-
+
+    ---
+
+    Released by [GoReleaser](https://github.com/goreleaser/goreleaser).

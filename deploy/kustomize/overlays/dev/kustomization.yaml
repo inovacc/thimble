@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+patches:
+  - target:
+      kind: Deployment
+      name: app-with-thimble
+    patch: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: app-with-thimble
+      spec:
+        replicas: 1
+        template:
+          spec:
+            containers:
+              - name: thimble
+                resources:
+                  requests:
+                    memory: "32Mi"
+                    cpu: "50m"
+                  limits:
+                    memory: "128Mi"
+                    cpu: "250m"
+
+images:
+  - name: ghcr.io/inovacc/thimble
+    newTag: latest

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>thimble - Session Insights</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1117; color: #e1e4e8; line-height: 1.6; padding: 24px; }
+  h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; color: #f0f6fc; }
+  nav { margin-bottom: 24px; font-size: 0.9rem; }
+  nav a { color: #58a6ff; text-decoration: none; }
+  nav a:hover { text-decoration: underline; }
+  h1 span { color: #58a6ff; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; }
+  .card-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #8b949e; margin-bottom: 4px; }
+  .card-value { font-size: 1.75rem; font-weight: 700; color: #f0f6fc; }
+  .card-value.error { color: #f85149; }
+  .section { margin-bottom: 32px; }
+  .section h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 12px; color: #f0f6fc; }
+  .chart { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; }
+  .bar-row { display: flex; align-items: center; margin-bottom: 8px; }
+  .bar-label { width: 140px; font-size: 0.85rem; color: #c9d1d9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+  .bar-track { flex: 1; height: 24px; background: #21262d; border-radius: 4px; overflow: hidden; margin: 0 12px; }
+  .bar-fill { height: 100%; background: #238636; border-radius: 4px; transition: width 0.4s ease; min-width: 2px; }
+  .bar-count { width: 48px; font-size: 0.85rem; color: #8b949e; text-align: right; flex-shrink: 0; }
+  table { width: 100%; border-collapse: collapse; background: #161b22; border: 1px solid #30363d; border-radius: 8px; overflow: hidden; }
+  th, td { padding: 10px 16px; text-align: left; border-bottom: 1px solid #21262d; }
+  th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #8b949e; background: #0d1117; }
+  td { font-size: 0.9rem; color: #c9d1d9; }
+  tr:last-child td { border-bottom: none; }
+  .rank { color: #8b949e; }
+  .status { font-size: 0.75rem; color: #8b949e; text-align: right; margin-top: 16px; }
+  .loading { color: #8b949e; font-style: italic; }
+
+  /* Timeline styles */
+  .timeline { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 20px; }
+  .tl-item { display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px solid #21262d; cursor: pointer; transition: background 0.15s; }
+  .tl-item:hover { background: #1c2128; }
+  .tl-item:last-child { border-bottom: none; }
+  .tl-time { flex-shrink: 0; width: 130px; font-size: 0.8rem; color: #8b949e; font-family: 'SF Mono', 'Fira Code', monospace; padding-top: 2px; }
+  .tl-body { flex: 1; min-width: 0; }
+  .tl-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .tl-badge { display: inline-block; font-size: 0.7rem; font-weight: 600; padding: 2px 8px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .tl-badge-tool_call { background: #1f3a5f; color: #58a6ff; }
+  .tl-badge-file { background: #1a3a2a; color: #3fb950; }
+  .tl-badge-git { background: #3d2e00; color: #d29922; }
+  .tl-badge-error { background: #3d1418; color: #f85149; }
+  .tl-badge-default { background: #21262d; color: #8b949e; }
+  .tl-category { font-size: 0.8rem; color: #8b949e; }
+  .tl-preview { font-size: 0.85rem; color: #c9d1d9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: 'SF Mono', 'Fira Code', monospace; }
+  .tl-detail { display: none; margin-top: 8px; padding: 12px; background: #0d1117; border-radius: 6px; border: 1px solid #30363d; }
+  .tl-detail.open { display: block; }
+  .tl-detail pre { font-size: 0.8rem; color: #c9d1d9; white-space: pre-wrap; word-break: break-all; font-family: 'SF Mono', 'Fira Code', monospace; max-height: 400px; overflow-y: auto; }
+  .tl-load-more { display: block; width: 100%; padding: 10px; margin-top: 12px; background: #21262d; color: #58a6ff; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; font-size: 0.85rem; text-align: center; }
+  .tl-load-more:hover { background: #30363d; }
+  .tl-load-more:disabled { color: #484f58; cursor: default; }
+  .tl-empty { color: #8b949e; font-style: italic; }
+</style>
+</head>
+<body>
+
+<h1><span>thimble</span> Session Insights</h1>
+<nav><a href="/marketplace">Plugin Marketplace</a></nav>
+
+<div class="cards" id="cards">
+  <div class="card"><div class="card-label">Session Duration</div><div class="card-value" id="v-duration">--</div></div>
+  <div class="card"><div class="card-label">Total Events</div><div class="card-value" id="v-events">--</div></div>
+  <div class="card"><div class="card-label">Errors</div><div class="card-value" id="v-errors">--</div></div>
+  <div class="card"><div class="card-label">Error Rate</div><div class="card-value" id="v-rate">--</div></div>
+</div>
+
+<div class="section">
+  <h2>Events by Type</h2>
+  <div class="chart" id="chart">
+    <p class="loading">Loading...</p>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Top 10 Tools</h2>
+  <div id="tools-container">
+    <p class="loading">Loading...</p>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Timeline</h2>
+  <div class="timeline" id="timeline">
+    <p class="loading">Loading...</p>
+  </div>
+</div>
+
+<div class="status" id="status">Last updated: --</div>
+
+<script>
+(function() {
+  const REFRESH_MS = 30000;
+
+  function fmt(n) { return n.toLocaleString(); }
+
+  async function fetchJSON(url) {
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    return r.json();
+  }
+
+  async function loadStats() {
+    const data = await fetchJSON('/api/stats');
+    if (!data) return;
+
+    document.getElementById('v-duration').textContent = data.duration || '0s';
+    document.getElementById('v-events').textContent = fmt(data.total_events);
+    document.getElementById('v-errors').textContent = fmt(data.error_count);
+    document.getElementById('v-errors').className = data.error_count > 0 ? 'card-value error' : 'card-value';
+    document.getElementById('v-rate').textContent = data.error_rate.toFixed(1) + '%';
+    document.getElementById('v-rate').className = data.error_rate > 5 ? 'card-value error' : 'card-value';
+
+    // Bar chart
+    const chart = document.getElementById('chart');
+    const types = data.events_by_type || {};
+    const entries = Object.entries(types).sort((a, b) => b[1] - a[1]);
+    if (entries.length === 0) {
+      chart.innerHTML = '<p style="color:#8b949e">No events recorded.</p>';
+      return;
+    }
+
+    const max = entries[0][1];
+    chart.innerHTML = entries.map(([type, count]) => {
+      const pct = Math.max((count / max) * 100, 1);
+      return '<div class="bar-row">' +
+        '<div class="bar-label" title="' + type + '">' + type + '</div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%"></div></div>' +
+        '<div class="bar-count">' + fmt(count) + '</div></div>';
+    }).join('');
+  }
+
+  async function loadTools() {
+    const data = await fetchJSON('/api/tools');
+    const container = document.getElementById('tools-container');
+    if (!data || !data.tools || data.tools.length === 0) {
+      container.innerHTML = '<p style="color:#8b949e">No tool data available.</p>';
+      return;
+    }
+
+    let html = '<table><thead><tr><th>#</th><th>Tool</th><th>Calls</th></tr></thead><tbody>';
+    data.tools.forEach((t, i) => {
+      html += '<tr><td class="rank">' + (i + 1) + '</td><td>' + t.name + '</td><td>' + fmt(t.count) + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  // Timeline
+  var tlOffset = 0;
+  var tlLoading = false;
+  var tlExpandedId = null;
+
+  function badgeClass(type) {
+    var map = { tool_call: 'tl-badge-tool_call', file: 'tl-badge-file', git: 'tl-badge-git', error: 'tl-badge-error' };
+    return map[type] || 'tl-badge-default';
+  }
+
+  function escapeHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function renderTimelineItem(ev) {
+    return '<div class="tl-item" data-id="' + ev.id + '" onclick="window._tlToggle(' + ev.id + ')">' +
+      '<div class="tl-time">' + escapeHtml(ev.created_at) + '</div>' +
+      '<div class="tl-body">' +
+        '<div class="tl-header">' +
+          '<span class="tl-badge ' + badgeClass(ev.type) + '">' + escapeHtml(ev.type) + '</span>' +
+          '<span class="tl-category">' + escapeHtml(ev.category) + '</span>' +
+        '</div>' +
+        '<div class="tl-preview">' + escapeHtml(ev.data_preview) + '</div>' +
+        '<div class="tl-detail" id="tl-detail-' + ev.id + '"><pre class="loading">Loading...</pre></div>' +
+      '</div></div>';
+  }
+
+  window._tlToggle = async function(id) {
+    var el = document.getElementById('tl-detail-' + id);
+    if (!el) return;
+
+    if (tlExpandedId === id) {
+      el.classList.remove('open');
+      tlExpandedId = null;
+      return;
+    }
+
+    // Close previous
+    if (tlExpandedId !== null) {
+      var prev = document.getElementById('tl-detail-' + tlExpandedId);
+      if (prev) prev.classList.remove('open');
+    }
+
+    el.classList.add('open');
+    tlExpandedId = id;
+
+    // Fetch full event data
+    el.innerHTML = '<pre class="loading">Loading...</pre>';
+    var data = await fetchJSON('/api/event/' + id);
+    if (data && data.event) {
+      var pretty;
+      try { pretty = JSON.stringify(JSON.parse(data.event.data), null, 2); } catch(e) { pretty = data.event.data; }
+      el.innerHTML = '<pre>' + escapeHtml(pretty) + '</pre>';
+    } else {
+      el.innerHTML = '<pre>Failed to load event data.</pre>';
+    }
+  };
+
+  async function loadTimeline(append) {
+    if (tlLoading) return;
+    tlLoading = true;
+    var container = document.getElementById('timeline');
+
+    if (!append) {
+      tlOffset = 0;
+      container.innerHTML = '<p class="loading">Loading...</p>';
+    }
+
+    var data = await fetchJSON('/api/timeline?limit=50&offset=' + tlOffset);
+    tlLoading = false;
+
+    if (!data || !data.events || data.events.length === 0) {
+      if (!append) container.innerHTML = '<p class="tl-empty">No events recorded.</p>';
+      return;
+    }
+
+    var html = '';
+    if (append) {
+      // Remove the load-more button before appending
+      var btn = document.getElementById('tl-load-more');
+      if (btn) btn.remove();
+      html = container.innerHTML;
+    }
+
+    html += data.events.map(renderTimelineItem).join('');
+    tlOffset += data.events.length;
+
+    if (data.has_more) {
+      html += '<button class="tl-load-more" id="tl-load-more" onclick="window._tlLoadMore()">Load more events</button>';
+    }
+
+    container.innerHTML = html;
+  }
+
+  window._tlLoadMore = function() {
+    loadTimeline(true);
+  };
+
+  async function refresh() {
+    await Promise.all([loadStats(), loadTools()]);
+    document.getElementById('status').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
+  }
+
+  refresh();
+  loadTimeline(false);
+  setInterval(refresh, REFRESH_MS);
+})();
+</script>
+</body>
+</html>

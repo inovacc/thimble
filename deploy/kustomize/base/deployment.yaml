@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-with-thimble
+  labels:
+    app: app-with-thimble
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-with-thimble
+  template:
+    metadata:
+      labels:
+        app: app-with-thimble
+    spec:
+      containers:
+        - name: app
+          image: nginx:stable-alpine
+          ports:
+            - containerPort: 80
+              name: http
+
+        - name: thimble
+          image: ghcr.io/inovacc/thimble:latest
+          command: ["thimble", "service", "--idle-timeout=0"]
+          ports:
+            - containerPort: 50351
+              name: grpc
+          env:
+            - name: THIMBLE_DATA_DIR
+              value: /data
+          volumeMounts:
+            - name: thimble-data
+              mountPath: /data
+            - name: thimble-plugins
+              mountPath: /data/plugins
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            grpc:
+              port: 50351
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            grpc:
+              port: 50351
+            initialDelaySeconds: 3
+            periodSeconds: 5
+
+      volumes:
+        - name: thimble-data
+          persistentVolumeClaim:
+            claimName: thimble-data
+        - name: thimble-plugins
+          configMap:
+            name: thimble-plugins

@@ -1,0 +1,88 @@
+# https://golangci-lint.run/docs/welcome/install/
+
+version: "2"
+
+run:
+  timeout: 2m
+
+linters:
+  default: all
+
+  exclusions:
+    rules:
+      - path: "examples/"
+        linters:
+          - forbidigo
+          - gocritic
+
+      # scraper packages call scout's public API which manages context internally
+      - path: "pkg/scout/scraper/"
+        linters:
+          - contextcheck
+
+      # grpc server and capture call scout's public API which manages context internally
+      - path: "grpc/"
+        linters:
+          - contextcheck
+      - path: "pkg/scout/capture.go"
+        linters:
+          - contextcheck
+      - path: "pkg/scout/recipes/"
+        linters:
+          - staticcheck
+
+      # store/session/analysis methods intentionally don't accept context
+      - path: "internal/mcp/"
+        linters:
+          - contextcheck
+      - path: "internal/hooks/"
+        linters:
+          - contextcheck
+      - path: "internal/delegate/"
+        linters:
+          - contextcheck
+      - path: "cmd/thimble/"
+        linters:
+          - contextcheck
+
+  disable:
+    - tagliatelle
+    - gochecknoglobals
+    - mnd
+    - testpackage
+    - varnamelen
+    - paralleltest
+    - gochecknoinits
+    - funlen
+    - cyclop
+    - err113
+    - wsl
+    - errorlint
+    - exhaustruct
+    - forcetypeassert
+    - funcorder
+    - gocognit
+    - godot
+    - godox
+    - gosec
+    - gosmopolitan
+    - intrange
+    - ireturn
+    - lll
+    - nestif
+    - nlreturn
+    - noctx
+    - noinlineerr
+    - nonamedreturns
+    - perfsprint
+    - revive
+    - tagalign
+    - testifylint
+    - thelper
+    - usetesting
+    - wrapcheck
+    - depguard
+    - dupl
+    - goconst
+    - gocyclo
+    - whitespace

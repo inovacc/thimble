@@ -1,0 +1,60 @@
+{
+  "description": "Thimble hooks — PreToolUse routing, PostToolUse session tracking, session lifecycle, and context compaction.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read|Edit|Write|WebFetch|Grep|Agent|Task|mcp__thimble__ctx_execute|mcp__thimble__ctx_execute_file|mcp__thimble__ctx_batch_execute",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "thimble hook claude-code pretooluse"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "thimble hook claude-code posttooluse"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "thimble hook claude-code precompact"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "thimble hook claude-code sessionstart"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "thimble hook claude-code userpromptsubmit"
+          }
+        ]
+      }
+    ]
+  }
+}

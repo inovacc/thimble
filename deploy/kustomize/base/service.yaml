@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: thimble
+  labels:
+    app: app-with-thimble
+spec:
+  type: ClusterIP
+  selector:
+    app: app-with-thimble
+  ports:
+    - port: 50351
+      targetPort: grpc
+      protocol: TCP
+      name: grpc

@@ -1,0 +1,37 @@
+---
+# Local observability stack for thimble development.
+# Start:  docker compose -f docker-compose.observability.yml up -d
+# UI:     Jaeger  http://localhost:16686
+#         Grafana http://localhost:3000 (admin/admin)
+# OTLP:   localhost:4317 (gRPC)
+#
+# Usage with thimble:
+#   export THIMBLE_TRACING=1
+#   export OTEL_EXPORTER_OTLP_ENDPOINT=localhost:4317
+
+services:
+  jaeger:
+    image: jaegertracing/jaeger:2
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC receiver
+      - "4318:4318"     # OTLP HTTP receiver
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.5.2
+    ports:
+      - "3000:3000"     # Grafana UI
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/grafana-dashboard.json
+    volumes:
+      - ./observability/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./observability/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./observability/grafana-dashboard.json:/var/lib/grafana/dashboards/grafana-dashboard.json:ro
+    depends_on:
+      - jaeger
+    restart: unless-stopped

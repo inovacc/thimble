@@ -1,0 +1,163 @@
+name: Bug Report
+description: Report a bug — but read the manifesto first. PRs are strongly preferred over issues.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## 🛑 Stop. Read this first.
+
+        **This project is maintained by one person across Windows, macOS, Linux, and 5+ agent adapters (Claude Code, Gemini CLI, VS Code Copilot, OpenCode, Codex CLI). It is not feasible to reproduce, debug, and fix every platform-specific edge case alone.**
+
+        ### PRs > Issues
+
+        If you can open an issue, you can open a PR. context-mode is built for agentic engineering — use it:
+
+        1. **Install the [TDD skill](https://www.aihero.dev/skill-test-driven-development-claude-code):** `claude install-skill https://www.aihero.dev/skill-test-driven-development-claude-code`
+        2. **RED — Write a failing test** that reproduces the bug. If you can describe the bug, you can write a test for it. Let your AI agent help.
+        3. **GREEN — Fix the bug.** The codebase is straightforward TypeScript. Your AI agent can navigate it.
+        4. **Open a PR** following the [PR template](https://github.com/mksglu/context-mode/blob/main/.github/PULL_REQUEST_TEMPLATE.md) — red/green output required.
+
+        Our CI runs on **Ubuntu, macOS, and Windows**. Your PR will be automatically verified across all three.
+
+        ### When to open an issue instead
+
+        Only open an issue if **all of these are true:**
+        - You genuinely tried to fix it and couldn't
+        - The bug is in core architecture (not a platform-specific path/encoding edge case)
+        - You can provide a minimal, reproducible test case
+
+        Issues without reproduction steps or doctor output will be closed.
+
+        ---
+
+        **Before you file:**
+        1. [Search existing issues](https://github.com/mksglu/context-mode/issues) to make sure this hasn't been reported already
+        2. Run `/context-mode:ctx-upgrade` to pull the latest version
+        3. Restart your agent session
+        4. Run `/context-mode:ctx-doctor` or ask the model to call the `stats` tool
+        5. If the issue persists on the latest version, file this report
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      description: Which AI agent platform are you using?
+      options:
+        - Claude Code
+        - Gemini CLI
+        - VS Code Copilot
+        - OpenCode
+        - Codex CLI
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: context-mode version
+      description: |
+        Run `/context-mode:ctx-doctor` (Claude Code) or ask the model to call the `stats` tool.
+        Must be the latest. If not, upgrade first.
+      placeholder: "e.g. 0.9.23"
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor-output
+    attributes:
+      label: Doctor output
+      description: |
+        Paste the full output of `/context-mode:ctx-doctor` or the stats tool output.
+        This helps us verify your environment is healthy.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Prompt that triggered the bug
+      description: |
+        Paste the exact prompt (message) you sent to the agent when the bug occurred.
+        This is critical for reproduction.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Clear description of the bug. What went wrong?
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: |
+        Minimal steps to reproduce the issue.
+      placeholder: |
+        1. Send prompt: "..."
+        2. Agent calls tool `execute` with ...
+        3. See error ...
+    validations:
+      required: true
+
+  - type: checkboxgroup
+    id: setup
+    attributes:
+      label: Setup details
+      description: Which components are installed?
+      options:
+        - label: MCP server registered
+        - label: Hooks configured (PreToolUse, PostToolUse, SessionStart, etc.)
+        - label: Routing instruction file present (CLAUDE.md / GEMINI.md / AGENTS.md / copilot-instructions.md)
+    validations:
+      required: false
+
+  - type: textarea
+    id: debug-logs
+    attributes:
+      label: Debug logs
+      description: |
+        Paste any error messages, MCP server logs, or tool output.
+
+        **Tip:** Press `Ctrl+O` in Claude Code to see background tool calls and MCP communication.
+        For other platforms, check the agent's debug/verbose output.
+      render: text
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      options:
+        - macOS
+        - Linux (Ubuntu/Debian)
+        - Linux (Other)
+        - Windows (Native)
+        - Windows (WSL)
+    validations:
+      required: true
+
+  - type: input
+    id: runtime
+    attributes:
+      label: JS Runtime
+      description: "Bun or Node version (shown in doctor output)"
+      placeholder: "e.g. bun 1.3.4"
+    validations:
+      required: false

@@ -1,0 +1,54 @@
+{
+  "name": "@inovacc/thimble",
+  "version": "4.8.1",
+  "description": "Claude Code plugin — context-aware code intelligence with polyglot execution, FTS5 knowledge base, background task delegation, and code analysis",
+  "license": "BSD-3-Clause",
+  "homepage": "https://github.com/inovacc/thimble",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/inovacc/thimble"
+  },
+  "keywords": [
+    "mcp",
+    "claude",
+    "claude-code",
+    "plugin",
+    "code-intelligence",
+    "context",
+    "fts5",
+    "analysis"
+  ],
+  "bin": {
+    "thimble": "bin/thimble-launcher.js"
+  },
+  "scripts": {
+    "prepublishOnly": "node scripts/prepublish.js",
+    "postinstall": "node scripts/install.js"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    ".claude-plugin/",
+    ".mcp.json",
+    "skills/",
+    "hooks/",
+    "agents/",
+    "bin/",
+    "scripts/",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

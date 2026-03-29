@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=thimble
+Comment=thimble
+Exec=thimble
+Icon=thimble
+Categories=Utility;
+Terminal=false

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: thimble-plugins
+data:
+  docker.json: |
+    {
+      "name": "docker",
+      "version": "1.0.0",
+      "tools": [
+        {
+          "name": "docker_ps",
+          "description": "List running containers",
+          "command": "docker ps --format json"
+        },
+        {
+          "name": "docker_images",
+          "description": "List local images",
+          "command": "docker images --format json"
+        }
+      ]
+    }

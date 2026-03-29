@@ -1,0 +1,13 @@
+{
+  "name": "thimble",
+  "version": "0.1.0",
+  "description": "Context-aware code intelligence plugin — polyglot execution, FTS5 knowledge base, background task delegation, and code analysis across all your projects.",
+  "author": {
+    "name": "inovacc",
+    "url": "https://github.com/inovacc"
+  },
+  "repository": "https://github.com/inovacc/thimble",
+  "license": "BSD-3-Clause",
+  "keywords": ["code-intelligence", "execution", "search", "analysis", "mcp"],
+  "skills": "./skills/"
+}

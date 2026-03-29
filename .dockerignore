@@ -1,0 +1,13 @@
+.git
+.github
+.claude
+.claude-plugin
+.scripts
+dist
+coverage.*
+*.exe
+*.test
+/tmp
+docs
+skills
+hooks

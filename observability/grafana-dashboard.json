@@ -1,0 +1,373 @@
+{
+  "__inputs": [
+    {
+      "name": "DS_JAEGER",
+      "label": "Jaeger",
+      "description": "Jaeger datasource for thimble OTel traces",
+      "type": "datasource",
+      "pluginId": "jaeger",
+      "pluginName": "Jaeger"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "10.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "jaeger",
+      "name": "Jaeger",
+      "version": "1.0.0"
+    }
+  ],
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "id": 1,
+      "title": "Tool Latency (duration_ms by mcp.tool)",
+      "description": "Histogram of tool execution duration in milliseconds, grouped by tool name. Sourced from mcp.tool.<name> spans.",
+      "type": "barchart",
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "jaeger", "uid": "jaeger" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "jaeger", "uid": "jaeger" },
+          "queryType": "search",
+          "service": "thimble",
+          "operation": "",
+          "tags": "mcp.tool=",
+          "minDuration": "",
+          "maxDuration": "",
+          "limit": 500
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "tags",
+            "format": "keyValue"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "mcp.tool": { "aggregations": [], "operation": "groupby" },
+              "duration_ms": { "aggregations": ["mean", "max", "min", "count"], "operation": "aggregate" }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              { "field": "duration_ms (mean)", "desc": true }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisLabel": "Duration (ms)",
+            "fillOpacity": 80,
+            "gradientMode": "scheme",
+            "lineWidth": 1,
+            "barAlignment": 0
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "groupWidth": 0.7,
+        "barWidth": 0.8,
+        "stacking": "none",
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" },
+        "xTickLabelRotation": -45
+      }
+    },
+    {
+      "id": 2,
+      "title": "Top 10 Tools by Call Count",
+      "description": "Bar chart showing the 10 most frequently called MCP tools.",
+      "type": "barchart",
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "jaeger", "uid": "jaeger" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "jaeger", "uid": "jaeger" },
+          "queryType": "search",
+          "service": "thimble",
+          "operation": "",
+          "tags": "mcp.tool=",
+          "limit": 1000
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "tags",
+            "format": "keyValue"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "mcp.tool": { "aggregations": ["count"], "operation": "groupby" }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              { "field": "mcp.tool (count)", "desc": true }
+            ]
+          }
+        },
+        {
+          "id": "limit",
+          "options": {
+            "limitField": 10
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisLabel": "Call Count",
+            "fillOpacity": 80,
+            "gradientMode": "scheme",
+            "lineWidth": 1
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "always",
+        "groupWidth": 0.7,
+        "barWidth": 0.8,
+        "stacking": "none",
+        "legend": { "displayMode": "hidden" },
+        "tooltip": { "mode": "single" },
+        "xTickLabelRotation": 0
+      }
+    },
+    {
+      "id": 3,
+      "title": "Error Rate (%)",
+      "description": "Percentage of spans with OTel error status (codes.Error). Covers both tool and hook spans.",
+      "type": "stat",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 9 },
+      "datasource": { "type": "jaeger", "uid": "jaeger" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "jaeger", "uid": "jaeger" },
+          "queryType": "search",
+          "service": "thimble",
+          "tags": "error=true",
+          "limit": 1000
+        },
+        {
+          "refId": "B",
+          "datasource": { "type": "jaeger", "uid": "jaeger" },
+          "queryType": "search",
+          "service": "thimble",
+          "limit": 1000
+        }
+      ],
+      "transformations": [
+        {
+          "id": "calculateField",
+          "options": {
+            "mode": "reduceRow",
+            "reduce": {
+              "reducer": "count"
+            },
+            "alias": "span_count"
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": null, "color": "green" },
+              { "value": 5, "color": "yellow" },
+              { "value": 15, "color": "orange" },
+              { "value": 30, "color": "red" }
+            ]
+          },
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": ["lastNotNull"],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "textMode": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 4,
+      "title": "Hook Timing (avg duration_ms by hook.event)",
+      "description": "Average hook execution duration grouped by event type (PreToolUse, PostToolUse, SessionStart, PreCompact). Sourced from hook.<event> spans.",
+      "type": "barchart",
+      "gridPos": { "h": 9, "w": 12, "x": 6, "y": 9 },
+      "datasource": { "type": "jaeger", "uid": "jaeger" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "jaeger", "uid": "jaeger" },
+          "queryType": "search",
+          "service": "thimble",
+          "operation": "",
+          "tags": "hook.event=",
+          "limit": 500
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "tags",
+            "format": "keyValue"
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "hook.event": { "aggregations": [], "operation": "groupby" },
+              "duration_ms": { "aggregations": ["mean", "max", "count"], "operation": "aggregate" }
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              { "field": "duration_ms (mean)", "desc": true }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisLabel": "Avg Duration (ms)",
+            "fillOpacity": 80,
+            "gradientMode": "scheme"
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "showValue": "always",
+        "groupWidth": 0.7,
+        "barWidth": 0.8,
+        "stacking": "none",
+        "legend": { "displayMode": "list", "placement": "bottom" },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Tool Timeline (Trace View)",
+      "description": "Trace timeline showing tool and hook spans. Click a trace ID to drill into the full span waterfall.",
+      "type": "traces",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 18 },
+      "datasource": { "type": "jaeger", "uid": "jaeger" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "jaeger", "uid": "jaeger" },
+          "queryType": "search",
+          "service": "thimble",
+          "operation": "",
+          "tags": "",
+          "limit": 50
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": ["thimble", "otel", "mcp", "hooks"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "All", "value": "$__all" },
+        "datasource": { "type": "jaeger", "uid": "jaeger" },
+        "definition": "",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Service",
+        "multi": false,
+        "name": "service",
+        "options": [],
+        "query": "thimble",
+        "refresh": 1,
+        "regex": "",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Thimble OTel Traces",
+  "uid": "thimble-otel-traces",
+  "version": 1
+}
