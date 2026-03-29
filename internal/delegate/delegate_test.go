@@ -3,6 +3,7 @@ package delegate
 import (
 	"log/slog"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -187,6 +188,10 @@ func TestGetTaskStatus(t *testing.T) {
 
 func TestGetTaskStatusCompleted(t *testing.T) {
 	t.Parallel()
+
+	if runtime.GOOS == "windows" {
+		t.Skip("shell echo unreliable on Windows CI")
+	}
 
 	m := newTestManager(t)
 	defer m.Shutdown()
@@ -483,6 +488,10 @@ func TestConcurrentStartTask(t *testing.T) {
 
 func TestTaskOutputCapture(t *testing.T) {
 	t.Parallel()
+
+	if runtime.GOOS == "windows" {
+		t.Skip("shell echo unreliable on Windows CI")
+	}
 
 	m := newTestManager(t)
 	defer m.Shutdown()

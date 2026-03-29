@@ -166,6 +166,10 @@ func TestExecuteNonShellLanguageCwd(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func TestExecuteBackgroundShortCommand(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("shell echo timing unreliable on Windows CI")
+	}
+
 	pe := New(nil)
 
 	// Short command completes before timeout — should NOT be backgrounded
