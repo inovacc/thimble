@@ -27,9 +27,16 @@ A single-binary MCP plugin for AI coding assistants. Provides an FTS5 knowledge 
 
 ```bash
 # One-time setup: point npm to GitHub Packages for @inovacc scope
-npm config set @inovacc:registry https://npm.pkg.github.com
+echo @inovacc:registry=https://npm.pkg.github.com >> ~/.npmrc
 
 # Install and register
+npm install -g @inovacc/thimble
+claude plugin install thimble@npm:@inovacc/thimble
+```
+
+**Windows (PowerShell):**
+```powershell
+Add-Content "$env:USERPROFILE\.npmrc" "@inovacc:registry=https://npm.pkg.github.com"
 npm install -g @inovacc/thimble
 claude plugin install thimble@npm:@inovacc/thimble
 ```
