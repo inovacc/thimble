@@ -4,7 +4,8 @@
 set -euo pipefail
 
 REPO="inovacc/thimble"
-PLUGIN_DIR="${THIMBLE_PLUGIN_DIR:-${HOME}/.thimble/plugin}"
+APP_DIR="${THIMBLE_INSTALL_DIR:-${HOME}/.thimble}"
+PLUGIN_DIR="${APP_DIR}/plugins"
 BIN_DIR="${THIMBLE_BIN_DIR:-/usr/local/bin}"
 
 # Detect OS and architecture.
@@ -32,7 +33,7 @@ if [ -z "$TAG" ]; then
 fi
 echo "Latest release: $TAG"
 
-# Download plugin archive (binary + .claude-plugin/ + skills/ + hooks/ + agents/ + .mcp.json).
+# Download plugin archive (binary + plugin assets).
 ASSET="thimble-plugin_${OS}_${ARCH}.tar.gz"
 URL="https://github.com/${REPO}/releases/download/${TAG}/${ASSET}"
 
@@ -42,33 +43,35 @@ trap 'rm -rf "$TMPDIR"' EXIT
 echo "Downloading ${URL}..."
 curl -fsSL "$URL" -o "${TMPDIR}/${ASSET}"
 
-echo "Extracting to ${PLUGIN_DIR}..."
+echo "Extracting..."
+tar xzf "${TMPDIR}/${ASSET}" -C "$TMPDIR"
+
+# Install binary to app dir.
+mkdir -p "$APP_DIR"
+cp "${TMPDIR}/thimble" "${APP_DIR}/thimble"
+chmod +x "${APP_DIR}/thimble"
+
+# Install plugin assets to plugins dir.
 mkdir -p "$PLUGIN_DIR"
-tar xzf "${TMPDIR}/${ASSET}" -C "$PLUGIN_DIR"
+for item in .claude-plugin .mcp.json hooks skills agents scripts LICENSE; do
+  if [ -e "${TMPDIR}/${item}" ]; then
+    cp -r "${TMPDIR}/${item}" "${PLUGIN_DIR}/${item}"
+  fi
+done
+# Copy binary into plugins dir too (needed for MCP server).
+cp "${APP_DIR}/thimble" "${PLUGIN_DIR}/thimble"
 
 # Symlink binary for CLI access.
 if [ -w "$BIN_DIR" ]; then
-  ln -sf "${PLUGIN_DIR}/thimble" "${BIN_DIR}/thimble"
+  ln -sf "${APP_DIR}/thimble" "${BIN_DIR}/thimble"
 else
   echo "Linking to ${BIN_DIR} (requires sudo)..."
-  sudo ln -sf "${PLUGIN_DIR}/thimble" "${BIN_DIR}/thimble"
+  sudo ln -sf "${APP_DIR}/thimble" "${BIN_DIR}/thimble"
 fi
 
 echo ""
-echo "✓ Installed thimble ${TAG} to ${PLUGIN_DIR}"
-
-# Auto-register with Claude Code if available.
-if command -v claude &>/dev/null; then
-  echo ""
-  echo "Registering with Claude Code..."
-  "${PLUGIN_DIR}/thimble" setup --client claude --plugin --plugin-dir "${PLUGIN_DIR}"
-  echo "✓ Thimble is ready. Start Claude Code to use it."
-else
-  echo ""
-  echo "To activate in Claude Code:"
-  echo "  claude --plugin-dir ${PLUGIN_DIR}"
-fi
+echo "✓ Installed thimble ${TAG}"
+echo "  Binary:  ${APP_DIR}/thimble"
+echo "  Plugins: ${PLUGIN_DIR}"
 echo ""
-echo "Other commands:"
-echo "  thimble doctor    # Run diagnostic checks"
-echo "  thimble --help    # Show all commands"
+echo "Run 'thimble setup' to configure your AI coding assistant."

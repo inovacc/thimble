@@ -23,17 +23,21 @@ A single-binary MCP plugin for AI coding assistants. Provides an FTS5 knowledge 
 
 ## Installation
 
-**Linux / macOS:**
+**Step 1 — Install:**
 ```bash
+# Linux / macOS
 curl -fsSL https://raw.githubusercontent.com/inovacc/thimble/main/scripts/install.sh | bash
-```
 
-**Windows (PowerShell):**
-```powershell
+# Windows (PowerShell)
 irm https://raw.githubusercontent.com/inovacc/thimble/main/scripts/install.ps1 | iex
 ```
 
-That's it. The installer downloads thimble and auto-registers it with Claude Code.
+**Step 2 — Choose your IDE:**
+```bash
+thimble setup
+```
+
+This shows an interactive menu to select your AI coding assistant (Claude Code, Gemini CLI, Cursor, etc.) and configures everything automatically.
 
 <details>
 <summary>Other install methods</summary>

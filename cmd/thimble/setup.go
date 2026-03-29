@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -85,8 +87,55 @@ func resolveClient(name string) (platform.PlatformID, error) {
 	return "", fmt.Errorf("unknown client %q (supported: claude, gemini, vscode, cursor, opencode, codex)", name)
 }
 
+// platformMenuEntry describes one option in the interactive setup menu.
+type platformMenuEntry struct {
+	label string
+	id    platform.PlatformID
+}
+
+var platformMenu = []platformMenuEntry{
+	{"Claude Code", platform.PlatformClaudeCode},
+	{"Gemini CLI", platform.PlatformGeminiCLI},
+	{"VS Code Copilot", platform.PlatformVSCodeCopilot},
+	{"Cursor", platform.PlatformCursor},
+	{"OpenCode", platform.PlatformOpenCode},
+	{"Codex", platform.PlatformCodex},
+}
+
+func promptPlatformMenu() (platform.PlatformID, error) {
+	_, _ = fmt.Fprintln(os.Stderr, "")
+	_, _ = fmt.Fprintln(os.Stderr, "Select your AI coding assistant:")
+	_, _ = fmt.Fprintln(os.Stderr, "")
+
+	for i, entry := range platformMenu {
+		_, _ = fmt.Fprintf(os.Stderr, "  %d) %s\n", i+1, entry.label)
+	}
+
+	_, _ = fmt.Fprintln(os.Stderr, "")
+	_, _ = fmt.Fprintf(os.Stderr, "Enter number (1-%d): ", len(platformMenu))
+
+	reader := bufio.NewReader(os.Stdin)
+
+	line, err := reader.ReadString('\n')
+	if err != nil {
+		return "", fmt.Errorf("failed to read input: %w", err)
+	}
+
+	choice, err := strconv.Atoi(strings.TrimSpace(line))
+	if err != nil || choice < 1 || choice > len(platformMenu) {
+		return "", fmt.Errorf("invalid choice: %q (enter 1-%d)", strings.TrimSpace(line), len(platformMenu))
+	}
+
+	selected := platformMenu[choice-1]
+	_, _ = fmt.Fprintf(os.Stderr, "Selected: %s\n", selected.label)
+
+	return selected.id, nil
+}
+
 func runSetup(_ *cobra.Command, _ []string) error {
 	var platformID platform.PlatformID
+
+	interactive := setupClient == ""
 
 	if setupClient != "" {
 		var err error
@@ -96,9 +145,13 @@ func runSetup(_ *cobra.Command, _ []string) error {
 			return err
 		}
 	} else {
-		signal := platform.Detect()
-		platformID = signal.Platform
-		_, _ = fmt.Fprintf(os.Stderr, "Auto-detected platform: %s (%s)\n", platformID, signal.Reason)
+		// Interactive menu when no --client specified.
+		selected, err := promptPlatformMenu()
+		if err != nil {
+			return err
+		}
+
+		platformID = selected
 	}
 
 	adapter, err := platform.Get(platformID)
@@ -106,14 +159,8 @@ func runSetup(_ *cobra.Command, _ []string) error {
 		return fmt.Errorf("unsupported platform: %s", platformID)
 	}
 
-	// Deploy plugin if requested.
-	if setupPlugin {
-		if platformID == platform.PlatformClaudeCode {
-			_, _ = fmt.Fprintln(os.Stderr, "NOTE: For Claude Code, prefer the plugin directory approach:")
-			_, _ = fmt.Fprintln(os.Stderr, "  claude --plugin-dir ~/.thimble/plugin")
-			_, _ = fmt.Fprintln(os.Stderr, "Falling back to legacy deploy for backward compatibility.")
-		}
-
+	// Deploy plugin: always in interactive mode, or when --plugin is passed.
+	if interactive || setupPlugin {
 		if err := deployPlugin(platformID); err != nil {
 			return fmt.Errorf("deploy plugin: %w", err)
 		}
