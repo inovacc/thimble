@@ -12,14 +12,14 @@ OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 ARCH="$(uname -m)"
 
 case "$ARCH" in
-  x86_64|amd64) ARCH="amd64" ;;
+  x86_64|amd64) ARCH="x86_64" ;;
   aarch64|arm64) ARCH="arm64" ;;
   *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
 esac
 
 case "$OS" in
-  linux)  OS="linux" ;;
-  darwin) OS="darwin" ;;
+  linux)  OS="Linux" ;;
+  darwin) OS="Darwin" ;;
   *) echo "Unsupported OS: $OS" >&2; exit 1 ;;
 esac
 
@@ -33,7 +33,7 @@ fi
 echo "Latest release: $TAG"
 
 # Build download URL.
-ASSET="${BINARY}_${TAG#v}_${OS}_${ARCH}.tar.gz"
+ASSET="${BINARY}_${OS}_${ARCH}.tar.gz"
 URL="https://github.com/${REPO}/releases/download/${TAG}/${ASSET}"
 
 # Download and extract.

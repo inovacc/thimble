@@ -10,7 +10,7 @@ $InstallDir = if ($env:THIMBLE_INSTALL_DIR) { $env:THIMBLE_INSTALL_DIR } else { 
 
 # Detect architecture.
 $Arch = if ([Environment]::Is64BitOperatingSystem) {
-    if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'amd64' }
+    if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'arm64' } else { 'x86_64' }
 } else {
     Write-Error "32-bit Windows is not supported."
     exit 1
@@ -27,8 +27,7 @@ if (-not $Tag) {
 Write-Host "Latest release: $Tag"
 
 # Build download URL.
-$Version = $Tag.TrimStart('v')
-$Asset = "${Binary}_${Version}_windows_${Arch}.zip"
+$Asset = "${Binary}_Windows_${Arch}.zip"
 $Url = "https://github.com/$Repo/releases/download/$Tag/$Asset"
 
 # Download and extract.
