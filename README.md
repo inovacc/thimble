@@ -33,11 +33,7 @@ curl -fsSL https://raw.githubusercontent.com/inovacc/thimble/main/scripts/instal
 irm https://raw.githubusercontent.com/inovacc/thimble/main/scripts/install.ps1 | iex
 ```
 
-Then activate in Claude Code:
-```bash
-claude --plugin-dir ~/.thimble/plugin            # Linux / macOS
-claude --plugin-dir "$env:LOCALAPPDATA\Thimble\plugin"  # Windows
-```
+That's it. The installer downloads thimble and auto-registers it with Claude Code.
 
 <details>
 <summary>Other install methods</summary>

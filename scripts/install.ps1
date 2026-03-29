@@ -48,10 +48,20 @@ try {
 
     Write-Host ""
     Write-Host "Installed thimble $Tag to $PluginDir"
-    Write-Host ""
-    Write-Host "Activate in Claude Code:"
-    Write-Host ""
-    Write-Host "  claude --plugin-dir `"$PluginDir`""
+
+    # Auto-register with Claude Code if available.
+    $ThimbleBin = Join-Path $PluginDir "thimble.exe"
+    if (Get-Command claude -ErrorAction SilentlyContinue) {
+        Write-Host ""
+        Write-Host "Registering with Claude Code..."
+        & $ThimbleBin setup --client claude --plugin --plugin-dir $PluginDir
+        Write-Host "Thimble is ready. Start Claude Code to use it."
+    } else {
+        Write-Host ""
+        Write-Host "To activate in Claude Code:"
+        Write-Host "  claude --plugin-dir `"$PluginDir`""
+    }
+
     Write-Host ""
     Write-Host "Other commands:"
     Write-Host "  thimble doctor    # Run diagnostic checks"

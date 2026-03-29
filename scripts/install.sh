@@ -56,10 +56,18 @@ fi
 
 echo ""
 echo "✓ Installed thimble ${TAG} to ${PLUGIN_DIR}"
-echo ""
-echo "Activate in Claude Code:"
-echo ""
-echo "  claude --plugin-dir ${PLUGIN_DIR}"
+
+# Auto-register with Claude Code if available.
+if command -v claude &>/dev/null; then
+  echo ""
+  echo "Registering with Claude Code..."
+  "${PLUGIN_DIR}/thimble" setup --client claude --plugin --plugin-dir "${PLUGIN_DIR}"
+  echo "✓ Thimble is ready. Start Claude Code to use it."
+else
+  echo ""
+  echo "To activate in Claude Code:"
+  echo "  claude --plugin-dir ${PLUGIN_DIR}"
+fi
 echo ""
 echo "Other commands:"
 echo "  thimble doctor    # Run diagnostic checks"
