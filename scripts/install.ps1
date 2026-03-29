@@ -57,10 +57,22 @@ try {
     Write-Host ""
     Write-Host "Installed $Binary $Tag to $InstallDir\$Binary.exe"
     Write-Host ""
+
+    # Configure npm for GitHub Packages if npm is available.
+    if (Get-Command npm -ErrorAction SilentlyContinue) {
+        $Npmrc = Join-Path $env:USERPROFILE ".npmrc"
+        $NpmrcContent = if (Test-Path $Npmrc) { Get-Content $Npmrc -Raw } else { "" }
+        if ($NpmrcContent -notlike "*@inovacc:registry*") {
+            Add-Content $Npmrc "@inovacc:registry=https://npm.pkg.github.com"
+            Write-Host "Configured npm for @inovacc GitHub Packages."
+        }
+    }
+
     Write-Host "Next steps:"
-    Write-Host "  thimble setup --client claude    # Configure for Claude Code"
-    Write-Host "  thimble doctor                   # Run diagnostic checks"
-    Write-Host "  thimble --help                   # Show all commands"
+    Write-Host "  claude plugin install thimble@npm:@inovacc/thimble   # Register as Claude Code plugin"
+    Write-Host "  thimble setup --client claude                        # Or configure hooks manually"
+    Write-Host "  thimble doctor                                       # Run diagnostic checks"
+    Write-Host "  thimble --help                                       # Show all commands"
 }
 finally {
     Remove-Item -Path $TmpDir -Recurse -Force -ErrorAction SilentlyContinue

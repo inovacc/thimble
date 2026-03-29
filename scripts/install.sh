@@ -59,7 +59,18 @@ chmod +x "${INSTALL_DIR}/${BINARY}"
 echo ""
 echo "Installed ${BINARY} ${TAG} to ${INSTALL_DIR}/${BINARY}"
 echo ""
+
+# Configure npm for GitHub Packages if npm is available.
+if command -v npm &>/dev/null; then
+  NPMRC="${HOME}/.npmrc"
+  if ! grep -q '@inovacc:registry' "$NPMRC" 2>/dev/null; then
+    echo "@inovacc:registry=https://npm.pkg.github.com" >> "$NPMRC"
+    echo "Configured npm for @inovacc GitHub Packages."
+  fi
+fi
+
 echo "Next steps:"
-echo "  thimble setup --client claude    # Configure for Claude Code"
-echo "  thimble doctor                   # Run diagnostic checks"
-echo "  thimble --help                   # Show all commands"
+echo "  claude plugin install thimble@npm:@inovacc/thimble   # Register as Claude Code plugin"
+echo "  thimble setup --client claude                        # Or configure hooks manually"
+echo "  thimble doctor                                       # Run diagnostic checks"
+echo "  thimble --help                                       # Show all commands"
